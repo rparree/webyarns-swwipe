@@ -30,8 +30,6 @@ class SWWipe {
     height: number = window.innerHeight;				// height of container
     aspect: number = this.width / this.height;				// aspect ratio of container
 
-    private _stop: boolean = false;
-
     private readonly imageArray: ImageObject[];
     private readonly _backCanvas: HTMLCanvasElement = document.createElement('canvas');
     private readonly _foreCanvas: HTMLCanvasElement = document.createElement('canvas');
@@ -40,6 +38,7 @@ class SWWipe {
 
     private percent: number = 0;
     private startTime: Date = new Date;
+    private nextFadeTimer: NodeJS.Timeout | null = null;
 
 
     private get curImg(): ImageObject {
@@ -78,13 +77,10 @@ class SWWipe {
         this._backContext = backContext;
         this._foregroundContext = foreContext;
 
-        this.nextFade();
-        this.resize();
         window.addEventListener('resize', this.resize);
     }
 
     private nextFade = () => {
-        if (this._stop) return
         // advance indices
         this.currentIdx = ++this.currentIdx % this.imageArray.length;
         this.drawImage();
@@ -99,7 +95,6 @@ class SWWipe {
     }
 
     private redraw = () => {
-        if (this._stop) return
         // calculate percent completion of wipe
         const currentTime = new Date;
         const elapsed = currentTime.getTime() - this.startTime.getTime();
@@ -301,7 +296,7 @@ class SWWipe {
         if (elapsed < this.curImg.fadeDuration)
             window.requestAnimationFrame(this.redraw);
         else
-            setTimeout(this.nextFade, this.curImg.fadeDelay);
+            this.nextFadeTimer = setTimeout(this.nextFade, this.curImg.fadeDelay);
     }
 
     private resize() {
@@ -319,46 +314,59 @@ class SWWipe {
         this.drawImage();
     };
 
-    destroy() {
-        this._stop = true;
-        window.removeEventListener('resize', this.resize);
-        this.banner.removeChild(this._backCanvas);
-        this.banner.removeChild(this._foreCanvas);
-    }
-
     private drawImage() {
-        if (this.aspect > this.curImg.aspect) {
+        if (this.curImg) {
+            if (this.aspect > this.curImg.aspect) {
 
-            this._backContext.drawImage(
-                this.curImg.img,
-                0,
-                (this.height - this.width / this.curImg.aspect) / 2,
-                this.width,
-                this.width / this.curImg.aspect);
+                this._backContext.drawImage(
+                    this.curImg.img,
+                    0,
+                    (this.height - this.width / this.curImg.aspect) / 2,
+                    this.width,
+                    this.width / this.curImg.aspect);
+            } else {
+
+                this._backContext.drawImage(
+                    this.curImg.img,
+                    (this.width - this.height * this.curImg.aspect) / 2,
+                    0,
+                    this.height * this.curImg.aspect,
+                    this.height);
+            }
         } else {
-
-            this._backContext.drawImage(
-                this.curImg.img,
-                (this.width - this.height * this.curImg.aspect) / 2,
-                0,
-                this.height * this.curImg.aspect,
-                this.height);
+            throw Error("no image " + this.currentIdx +" " + this.imageArray.length )
         }
     }
+
+
+    start(){
+        this.currentIdx = -1
+        this.nextFade();
+        this.resize();
+    }
+
+    stop(){
+        this.nextFadeTimer && clearTimeout(this.nextFadeTimer)
+    }
+
 }
 
 (function () {
-    let wipe: any;
 
     document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll<HTMLElement>(".banner").forEach(b=>{
+            // @ts-ignore
+            b.sswipe = new SWWipe(b);
+        })
+
         Reveal.addEventListener("slidechanged", (e) => {
-            if (wipe) {
-                wipe.stop()
-                wipe = null
+            const prevBanner = e.currentSlide.querySelector(".banner");
+            if (prevBanner) {
+                (prevBanner.sswipe as SWWipe).stop();
             }
             const nextBanner = e.currentSlide.querySelector(".banner");
             if (nextBanner) {
-                wipe = new SWWipe(nextBanner)
+                (prevBanner.sswipe as SWWipe).start();
             }
         })
     })
