@@ -1,0 +1,49 @@
+{
+  "name": "webyarns-sounds",
+  "version": "3.10.1",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "watch": "webpack serve --mode=development",
+    "build": "webpack --mode=production",
+    "deploy": "sh deploy.sh",
+    "tsc": "tsc",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
+  },
+  "dependencies": {
+    "howler": "^2.1.2",
+    "webyarns-reveal": "github:rparree/reveal.js.git#3.8.17-vertical"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.15.5",
+    "@babel/plugin-proposal-class-properties": "^7.14.5",
+    "@babel/plugin-proposal-optional-chaining": "^7.14.5",
+    "@babel/plugin-transform-runtime": "^7.15.0",
+    "@babel/preset-env": "^7.15.6",
+    "@babel/preset-typescript": "^7.15.0",
+    "@types/howler": "^2.2.6",
+    "@types/reveal": "^3.3.0",
+    "@types/webpack-env": "^1.16.2",
+    "babel-loader": "^8.2.2",
+    "babel-plugin-transform-remove-console": "^6.9.4",
+    "copy-webpack-plugin": "^9.0.1",
+    "css-loader": "^6.3.0",
+    "css-minimizer-webpack-plugin": "^3.1.1",
+    "cypress": "^9.5.2",
+    "git-revision-webpack-plugin": "^5.0.0",
+    "html-webpack-plugin": "^5.3.2",
+    "mini-css-extract-plugin": "^2.4.2",
+    "postcss": "^8.3.9",
+    "postcss-loader": "^6.1.1",
+    "postcss-nested": "^5.0.6",
+    "postcss-preset-env": "^6.7.0",
+    "reveal.js": "3.8.0",
+    "source-map-loader": "^3.0.0",
+    "style-loader": "^3.3.0",
+    "typescript": "^4.4.3",
+    "webpack": "^5.54.0",
+    "webpack-cli": "^4.8.0",
+    "webpack-dev-server": "^4.2.1"
+  }
+}
