@@ -13,6 +13,10 @@ Webyarns version:
 - on destroy remove created elements
 */
 
+enum Mode {
+    AUTO, MULTI_SECTION
+}
+
 interface ImageObject {
     startPercentage: number;
     fadeWidth: number;
@@ -49,7 +53,7 @@ class SWWipe {
         return this.imageArray[(this.currentIdx + 1) % this.imageArray.length];
     }
 
-    constructor(private readonly banner: HTMLElement) {
+    constructor(readonly banner: HTMLElement, readonly owner: HTMLElement, readonly mode: Mode = Mode.AUTO) {
         const images = Array.from(this.banner.querySelectorAll("img"));
         this.imageArray = images.map(img => {
             const aspect = img.width / img.height;
@@ -295,7 +299,7 @@ class SWWipe {
 
         if (elapsed < this.curImg.fadeDuration)
             window.requestAnimationFrame(this.redraw);
-        else
+        else if (this.mode === Mode.AUTO)
             this.nextFadeTimer = setTimeout(this.nextFade, this.curImg.fadeDelay);
     }
 
@@ -349,24 +353,61 @@ class SWWipe {
         this.nextFadeTimer && clearTimeout(this.nextFadeTimer)
     }
 
+    next(){
+        if (this.mode !== Mode.MULTI_SECTION)
+            throw Error("This swwipe operates in AUTO mode")
+        this.nextFade()
+    }
+
+
+    get numberOfFades() {
+        return this.imageArray.length
+    }
 }
 
 (function () {
 
     document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll<HTMLElement>(".banner").forEach(b=>{
+            const mode: Mode =  b.hasAttribute("data-multi-swipe") ? Mode.MULTI_SECTION : Mode.AUTO
+            const owner = b.closest("section")
+            if (!owner) throw Error("banner element not part of a section")
+            const wipe = new SWWipe(b, owner, mode);
             // @ts-ignore
-            b.sswipe = new SWWipe(b);
+            b.sswipe = wipe;
         })
 
         Reveal.addEventListener("slidechanged", (e) => {
-            const prevBanner = e.currentSlide.querySelector(".banner");
+            const prevBanner = e.previousSlide.querySelector(".banner");
             if (prevBanner) {
-                (prevBanner.sswipe as SWWipe).stop();
+                const wipe = prevBanner.sswipe as SWWipe;
+                if (wipe.mode === Mode.AUTO)
+                    wipe.stop();
+                else {
+                    const ownerIndex: {h:number; v:number;} = Reveal.getIndices(wipe.owner)
+                    const currentIndex: {h:number; v:number;} = Reveal.getIndices(e.currentSlide)
+                    const distance = e.currentSlide.indexV ?
+                        currentIndex.v - (ownerIndex.v || 0) :
+                        currentIndex.h - ownerIndex.h
+                    console.log(distance);
+                    if (distance > 0 && distance < wipe.numberOfFades) {
+                        e.currentSlide.appendChild(wipe.banner)
+                    } else {
+                        wipe.stop()
+                        wipe.owner.appendChild(wipe.banner)
+                    }
+
+
+                }
             }
             const nextBanner = e.currentSlide.querySelector(".banner");
             if (nextBanner) {
-                (prevBanner.sswipe as SWWipe).start();
+                let sswipe = nextBanner.sswipe as SWWipe;
+                if (sswipe.mode === Mode.AUTO || sswipe.owner === e.currentSlide)
+                    sswipe.start();
+                else
+                    sswipe.next();
+
             }
         })
     })
@@ -374,4 +415,23 @@ class SWWipe {
 
 })()
 
+// `closest` Polyfill for IE
+
+if (!Element.prototype.matches) {
+    Element.prototype.matches =
+        Element.prototype.msMatchesSelector ||
+        Element.prototype.webkitMatchesSelector;
+}
+
+if (!Element.prototype.closest) {
+    Element.prototype.closest = function(s) {
+        var el = this;
+
+        do {
+            if (Element.prototype.matches.call(el, s)) return el;
+            el = el.parentElement || el.parentNode;
+        } while (el !== null && el.nodeType === 1);
+        return null;
+    };
+}
 
