@@ -53,7 +53,7 @@ class SWWipe {
         return this.imageArray[(this.currentIdx + 1) % this.imageArray.length];
     }
 
-    constructor(readonly banner: HTMLElement, readonly owner: HTMLElement, readonly mode: Mode = Mode.AUTO) {
+    constructor(readonly banner: HTMLElement, readonly owner: HTMLElement, readonly mode: Mode = Mode.AUTO, readonly loop = true) {
         const images = Array.from(this.banner.querySelectorAll("img"));
         this.imageArray = images.map(img => {
             const aspect = img.width / img.height;
@@ -300,7 +300,8 @@ class SWWipe {
         if (elapsed < this.curImg.fadeDuration)
             window.requestAnimationFrame(this.redraw);
         else if (this.mode === Mode.AUTO)
-            this.nextFadeTimer = setTimeout(this.nextFade, this.curImg.fadeDelay);
+            if (this.loop || this.currentIdx < this.imageArray.length -1)
+                this.nextFadeTimer = setTimeout(this.nextFade, this.curImg.fadeDelay);
     }
 
     private resize() {
@@ -370,9 +371,10 @@ class SWWipe {
     document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll<HTMLElement>(".banner").forEach(b=>{
             const mode: Mode =  b.hasAttribute("data-multi-swipe") ? Mode.MULTI_SECTION : Mode.AUTO
+            const noLoop: boolean =  b.hasAttribute("data-no-loop")
             const owner = b.closest("section")
             if (!owner) throw Error("banner element not part of a section")
-            const wipe = new SWWipe(b, owner, mode);
+            const wipe = new SWWipe(b, owner, mode, !noLoop);
             // @ts-ignore
             b.sswipe = wipe;
         })
