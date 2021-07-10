@@ -25,6 +25,7 @@ interface ImageObject {
     fadeDuration: number;
     aspect: number;
     img: HTMLImageElement;
+    noResize: boolean;
 }
 
 class SWWipe {
@@ -62,6 +63,7 @@ class SWWipe {
             const fadeType = img.hasAttribute("data-fadeType") ? img.getAttribute("data-fadeType") : "cross-lr";
             const fadeWidth = img.hasAttribute("data-fadeWidth") ? Number(img.getAttribute("data-fadeWidth")) : .1;
             const startPercentage = img.hasAttribute("data-startAt") ? Number(img.getAttribute("data-startAt")) : 0;
+            const noResize = img.hasAttribute("data-no-resize");
             return {
                 img,
                 aspect,
@@ -69,7 +71,8 @@ class SWWipe {
                 fadeDelay,
                 fadeType,
                 fadeWidth,
-                startPercentage
+                startPercentage,
+                noResize
             }
         })
 
@@ -277,22 +280,7 @@ class SWWipe {
         }
 
         this._foregroundContext.globalCompositeOperation = "source-in";
-
-        if (this.aspect > this.nxtImg.aspect) {
-
-            this._foregroundContext.drawImage(this.nxtImg.img,
-                0,
-                (this.height - this.width / this.nxtImg.aspect) / 2,
-                this.width,
-                this.width / this.nxtImg.aspect);
-        } else {
-
-            this._foregroundContext.drawImage(this.nxtImg.img,
-                (this.width - this.height * this.nxtImg.aspect) / 2,
-                0,
-                this.height * this.nxtImg.aspect,
-                this.height);
-        }
+        this._draw(this.nxtImg, this._foregroundContext)
 
         this._foregroundContext.restore();
 
@@ -300,8 +288,35 @@ class SWWipe {
         if (elapsed < this.curImg.fadeDuration)
             window.requestAnimationFrame(this.redraw);
         else if (this.mode === Mode.AUTO)
-            if (this.loop || this.currentIdx < this.imageArray.length -1)
+            if (this.loop || this.currentIdx < this.imageArray.length - 1)
                 this.nextFadeTimer = setTimeout(this.nextFade, this.curImg.fadeDelay);
+    }
+
+    private _draw(i: ImageObject, ctx: CanvasRenderingContext2D){
+        if (i.noResize) {
+            const h = i.img.height
+            const w = i.img.width
+            ctx.drawImage(
+                i.img,
+                this.width / 2 - w / 2,
+                this.height /2 - h / 2,
+                w, h)
+        } else if (this.aspect > i.aspect) {
+
+            ctx.drawImage(i.img,
+                0,
+                (this.height - this.width / i.aspect) / 2,
+                this.width,
+                this.width / i.aspect);
+        } else {
+
+            ctx.drawImage(i.img,
+                (this.width - this.height * i.aspect) / 2,
+                0,
+                this.height * i.aspect,
+                this.height);
+        }
+
     }
 
     private resize() {
@@ -321,40 +336,24 @@ class SWWipe {
 
     private drawImage() {
         if (this.curImg) {
-            if (this.aspect > this.curImg.aspect) {
-
-                this._backContext.drawImage(
-                    this.curImg.img,
-                    0,
-                    (this.height - this.width / this.curImg.aspect) / 2,
-                    this.width,
-                    this.width / this.curImg.aspect);
-            } else {
-
-                this._backContext.drawImage(
-                    this.curImg.img,
-                    (this.width - this.height * this.curImg.aspect) / 2,
-                    0,
-                    this.height * this.curImg.aspect,
-                    this.height);
-            }
+            this._draw(this.curImg, this._backContext)
         } else {
-            throw Error("no image " + this.currentIdx +" " + this.imageArray.length )
+            throw Error("no image " + this.currentIdx + " " + this.imageArray.length)
         }
     }
 
 
-    start(){
+    start() {
         this.currentIdx = -1
         this.nextFade();
         this.resize();
     }
 
-    stop(){
+    stop() {
         this.nextFadeTimer && clearTimeout(this.nextFadeTimer)
     }
 
-    next(){
+    next() {
         if (this.mode !== Mode.MULTI_SECTION)
             throw Error("This swwipe operates in AUTO mode")
         this.nextFade()
@@ -369,9 +368,9 @@ class SWWipe {
 (function () {
 
     document.addEventListener("DOMContentLoaded", () => {
-        document.querySelectorAll<HTMLElement>(".banner").forEach(b=>{
-            const mode: Mode =  b.hasAttribute("data-multi-swipe") ? Mode.MULTI_SECTION : Mode.AUTO
-            const noLoop: boolean =  b.hasAttribute("data-no-loop")
+        document.querySelectorAll<HTMLElement>(".banner").forEach(b => {
+            const mode: Mode = b.hasAttribute("data-multi-swipe") ? Mode.MULTI_SECTION : Mode.AUTO
+            const noLoop: boolean = b.hasAttribute("data-no-loop")
             const owner = b.closest("section")
             if (!owner) throw Error("banner element not part of a section")
             const wipe = new SWWipe(b, owner, mode, !noLoop);
@@ -386,8 +385,8 @@ class SWWipe {
                 if (wipe.mode === Mode.AUTO)
                     wipe.stop();
                 else {
-                    const ownerIndex: {h:number; v:number;} = Reveal.getIndices(wipe.owner)
-                    const currentIndex: {h:number; v:number;} = Reveal.getIndices(e.currentSlide)
+                    const ownerIndex: { h: number; v: number; } = Reveal.getIndices(wipe.owner)
+                    const currentIndex: { h: number; v: number; } = Reveal.getIndices(e.currentSlide)
                     const distance = e.currentSlide.indexV ?
                         currentIndex.v - (ownerIndex.v || 0) :
                         currentIndex.h - ownerIndex.h
@@ -426,7 +425,7 @@ if (!Element.prototype.matches) {
 }
 
 if (!Element.prototype.closest) {
-    Element.prototype.closest = function(s) {
+    Element.prototype.closest = function (s) {
         var el = this;
 
         do {
