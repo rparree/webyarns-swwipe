@@ -260,9 +260,9 @@ class SWWipe {
 
             case "radial-out":
             case "radial-in": {
-
-                const innerRadius = (this.percent) * this.height - 100 < 0 ? .01 : (this.percent) * this.height - 100;
-                const outerRadius = this.percent * this.height + 100
+                const percent = this.curImg.fadeType === "radial-in" ?  (1 - this.percent) : this.percent
+                const innerRadius = (percent) * this.height - 100 < 0 ? .01 : (percent) * this.height - 100;
+                const outerRadius = percent * this.height + 100
                 const gradient = this._foregroundContext.createRadialGradient(this.width / 2, this.height / 2, innerRadius, this.width / 2, this.height / 2, outerRadius);
                 gradient.addColorStop(0.0, 'rgba(0,0,0,1)');
                 gradient.addColorStop(1.0, 'rgba(0,0,0,0)');
@@ -272,9 +272,7 @@ class SWWipe {
                 break;
             }
 
-
             default:
-
                 break;
 
         }
