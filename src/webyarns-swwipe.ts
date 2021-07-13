@@ -379,7 +379,7 @@ class SWWipe {
         })
 
         Reveal.addEventListener("slidechanged", (e) => {
-            const prevBanner = e.previousSlide.querySelector(".banner");
+            const prevBanner = e.previousSlide?.querySelector(".banner");
             if (prevBanner) {
                 const wipe = prevBanner.sswipe as SWWipe;
                 if (wipe.mode === Mode.AUTO)
