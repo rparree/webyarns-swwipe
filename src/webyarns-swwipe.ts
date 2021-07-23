@@ -1,6 +1,8 @@
 import "./swwipe.css"
 /*
 
+See https://github.com/DaveSeidman/StarWarsWipe
+
 	To Do
 	------------------------------------------
 	Fix diagonal wipe
@@ -268,13 +270,19 @@ class SWWipe {
                 /*if (this.curImg.fadeType === "radial-in"){
                     console.table({"percent": percent,"innerRadius": innerRadius, "outerRadius": outerRadius })
                 }*/
+
                 const gradient = this._foregroundContext.createRadialGradient(
                     this.width / 2,
                     this.height / 2, innerRadius,
                     this.width / 2,
                     this.height / 2, outerRadius);
-                gradient.addColorStop(0.0, 'rgba(0,0,0,1)');
-                gradient.addColorStop(1.0, 'rgba(0,0,0,0)');
+                if (this.curImg.fadeType === "radial-in") {
+                    gradient.addColorStop(1.0, 'rgba(0,0,0,1)');
+                    gradient.addColorStop(0.0, 'rgba(0,0,0,0)');
+                } else {
+                    gradient.addColorStop(0.0, 'rgba(0,0,0,1)');
+                    gradient.addColorStop(1.0, 'rgba(0,0,0,0)');
+                }
                 this._foregroundContext.fillStyle = gradient;
                 this._foregroundContext.fillRect(0, 0, this.width, this.height);
 
