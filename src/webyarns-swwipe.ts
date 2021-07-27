@@ -300,8 +300,9 @@ class SWWipe {
 
         }
 
-        this._foregroundContext.globalCompositeOperation = "source-in";
-        this._draw(this.nxtImg, this._foregroundContext)
+
+        this._foregroundContext.globalCompositeOperation = this.nxtImg.noResize ? "source-atop" : "source-in";
+        this._draw(this.nxtImg, this._foregroundContext, this._backContext)
 
         this._foregroundContext.restore();
 
@@ -313,15 +314,21 @@ class SWWipe {
                 this.nextFadeTimer = setTimeout(this.nextFade, this.curImg.fadeDelay);
     }
 
-    private _draw(i: ImageObject, ctx: CanvasRenderingContext2D){
+    private _draw(i: ImageObject, ctx: CanvasRenderingContext2D, otherCtx: CanvasRenderingContext2D){
         if (i.noResize) {
+            ctx.save()
+            ctx.fillStyle="black"
+            ctx.fillRect(0,0,this.width,this.height)
+
             const h = i.dimensions.height
             const w = i.dimensions.width
+
             ctx.drawImage(
                 i.img,
                 this.width / 2 - w / 2,
                 this.height /2 - h / 2,
                 w, h)
+            ctx.restore()
         } else if (this.aspect > i.aspect) {
 
             ctx.drawImage(i.img,
@@ -357,7 +364,7 @@ class SWWipe {
 
     private drawImage() {
         if (this.curImg) {
-            this._draw(this.curImg, this._backContext)
+            this._draw(this.curImg, this._backContext, this._foregroundContext)
         } else {
             throw Error("no image " + this.currentIdx + " " + this.imageArray.length)
         }
@@ -440,17 +447,19 @@ class SWWipe {
 // `closest` Polyfill for IE
 
 if (!Element.prototype.matches) {
-    Element.prototype.matches =
-        Element.prototype.msMatchesSelector ||
+    // @ts-ignore
+    Element.prototype.matches = Element.prototype.msMatchesSelector ||
         Element.prototype.webkitMatchesSelector;
 }
 
 if (!Element.prototype.closest) {
+    // @ts-ignore
     Element.prototype.closest = function (s) {
-        var el = this;
+        let el = this;
 
         do {
             if (Element.prototype.matches.call(el, s)) return el;
+            // @ts-ignore
             el = el.parentElement || el.parentNode;
         } while (el !== null && el.nodeType === 1);
         return null;
