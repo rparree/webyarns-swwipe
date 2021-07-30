@@ -28,7 +28,8 @@ interface ImageObject {
     aspect: number;
     img: HTMLImageElement;
     noResize: boolean;
-    dimensions : {"width": number,"height": number}
+    heightScale: number;
+    dimensions: { "width": number, "height": number }
 }
 
 class SWWipe {
@@ -67,9 +68,10 @@ class SWWipe {
             const fadeWidth = img.hasAttribute("data-fadeWidth") ? Number(img.getAttribute("data-fadeWidth")) : .1;
             const startPercentage = img.hasAttribute("data-startAt") ? Number(img.getAttribute("data-startAt")) : 0;
             const noResize = img.hasAttribute("data-no-resize");
+            const heightScale = img.hasAttribute("data-height-scale") ? Number(img.getAttribute("data-height-scale")) : 1;
             const dimensions = {
-                width : img.width,
-                height : img.height,
+                width: img.width,
+                height: img.height,
             }
             return {
                 img,
@@ -80,6 +82,7 @@ class SWWipe {
                 fadeWidth,
                 startPercentage,
                 noResize,
+                heightScale,
                 dimensions
             }
         })
@@ -268,9 +271,9 @@ class SWWipe {
 
             case "radial-out":
             case "radial-in": {
-                const percent = this.curImg.fadeType === "radial-in" ?  (1 - this.percent) : this.percent
+                const percent = this.curImg.fadeType === "radial-in" ? (1 - this.percent) : this.percent
                 const width = 100;
-                const endState =  0.01
+                const endState = 0.01
                 const innerRadius = (percent) * this.height - width < 0 ? endState : (percent) * this.height - width;
                 const outerRadius = percent * this.height + width
                 /*if (this.curImg.fadeType === "radial-in"){
@@ -314,20 +317,28 @@ class SWWipe {
                 this.nextFadeTimer = setTimeout(this.nextFade, this.curImg.fadeDelay);
     }
 
-    private _draw(i: ImageObject, ctx: CanvasRenderingContext2D, otherCtx: CanvasRenderingContext2D){
+    private _draw(i: ImageObject, ctx: CanvasRenderingContext2D, otherCtx: CanvasRenderingContext2D) {
         if (i.noResize) {
             ctx.save()
-            ctx.fillStyle="black"
-            ctx.fillRect(0,0,this.width,this.height)
+            const canvasWidthMiddle = ctx.canvas.width / 2;
+            const canvasHeightMiddle = ctx.canvas.height / 2;
+            const g = ctx.createRadialGradient(canvasWidthMiddle, canvasHeightMiddle, 0, canvasWidthMiddle, canvasHeightMiddle, Math.max(canvasWidthMiddle, canvasHeightMiddle))
+            g.addColorStop(0, "#5cb8f8")
+            g.addColorStop(1, "#464848")
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, this.width, this.height)
 
             const h = i.dimensions.height
             const w = i.dimensions.width
-
-            ctx.drawImage(
-                i.img,
-                this.width / 2 - w / 2,
-                this.height /2 - h / 2,
-                w, h)
+            const r = i.heightScale
+            const {
+                offsetX,
+                offsetY,
+                width,
+                height
+            } = contain(ctx.canvas.width, ctx.canvas.height*r, w, h)
+            ctx.save()
+            ctx.drawImage(i.img, offsetX, offsetY-((r-1) * (ctx.canvas.height/2)), width, height)
             ctx.restore()
         } else if (this.aspect > i.aspect) {
 
@@ -392,6 +403,32 @@ class SWWipe {
         return this.imageArray.length
     }
 }
+
+const contain = fit(true)
+const cover = fit(false)
+
+function fit(contains: boolean) {
+    return (parentWidth: number, parentHeight: number, childWidth: number, childHeight: number, scale = 1, offsetX = 0.5, offsetY = 0.5) => {
+        const childRatio = childWidth / childHeight
+        const parentRatio = parentWidth / parentHeight
+        let width = parentWidth * scale
+        let height = parentHeight * scale
+
+        if (contains ? (childRatio > parentRatio) : (childRatio < parentRatio)) {
+            height = width / childRatio
+        } else {
+            width = height * childRatio
+        }
+
+        return {
+            width,
+            height,
+            offsetX: (parentWidth - width) * offsetX,
+            offsetY: (parentHeight - height) * offsetY
+        }
+    }
+}
+
 
 (function () {
 
