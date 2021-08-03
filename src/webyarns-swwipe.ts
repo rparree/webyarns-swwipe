@@ -27,7 +27,8 @@ interface ImageObject {
     fadeDuration: number;
     aspect: number;
     img: HTMLImageElement;
-    noResize: boolean;
+    proportional: boolean;
+    widthScale: number;
     heightScale: number;
     dimensions: { "width": number, "height": number }
 }
@@ -67,8 +68,10 @@ class SWWipe {
             const fadeType = img.hasAttribute("data-fadeType") ? img.getAttribute("data-fadeType") : "cross-lr";
             const fadeWidth = img.hasAttribute("data-fadeWidth") ? Number(img.getAttribute("data-fadeWidth")) : .1;
             const startPercentage = img.hasAttribute("data-startAt") ? Number(img.getAttribute("data-startAt")) : 0;
-            const noResize = img.hasAttribute("data-no-resize");
-            const heightScale = img.hasAttribute("data-height-scale") ? Number(img.getAttribute("data-height-scale")) : 1;
+            const proportional = img.hasAttribute("data-proportional");
+            const heightScale = img.hasAttribute("data-proportional-height") ? Number(img.getAttribute("data-proportional-height")) : 1;
+            const widthScale = img.hasAttribute("data-proportional-width") ? Number(img.getAttribute("data-proportional-width")) : 1;
+
             const dimensions = {
                 width: img.width,
                 height: img.height,
@@ -81,7 +84,8 @@ class SWWipe {
                 fadeType,
                 fadeWidth,
                 startPercentage,
-                noResize,
+                proportional,
+                widthScale,
                 heightScale,
                 dimensions
             }
@@ -304,7 +308,7 @@ class SWWipe {
         }
 
 
-        this._foregroundContext.globalCompositeOperation = this.nxtImg.noResize ? "source-atop" : "source-in";
+        this._foregroundContext.globalCompositeOperation = this.nxtImg.proportional ? "source-atop" : "source-in";
         this._draw(this.nxtImg, this._foregroundContext, this._backContext)
 
         this._foregroundContext.restore();
@@ -318,7 +322,7 @@ class SWWipe {
     }
 
     private _draw(i: ImageObject, ctx: CanvasRenderingContext2D, otherCtx: CanvasRenderingContext2D) {
-        if (i.noResize) {
+        if (i.proportional) {
             ctx.save()
             const canvasWidthMiddle = ctx.canvas.width / 2;
             const canvasHeightMiddle = ctx.canvas.height / 2;
@@ -327,19 +331,16 @@ class SWWipe {
             g.addColorStop(1, "#464848")
             ctx.fillStyle = g;
             ctx.fillRect(0, 0, this.width, this.height)
-
-            const h = i.dimensions.height
-            const w = i.dimensions.width
-            const r = i.heightScale
-            const {
-                offsetX,
-                offsetY,
-                width,
-                height
-            } = contain(ctx.canvas.width, ctx.canvas.height*r, w, h)
-            ctx.save()
-            ctx.drawImage(i.img, offsetX, offsetY-((r-1) * (ctx.canvas.height/2)), width, height)
-            ctx.restore()
+            const hr = .98;
+            const wr = .333;
+            const h = this.height * i.heightScale
+            const w = this.width * i.widthScale
+            const r = 1
+            ctx.drawImage(
+                i.img,
+                this.width / 2 - w / 2,
+                this.height /2 - h / 2,
+                w, h)
         } else if (this.aspect > i.aspect) {
 
             ctx.drawImage(i.img,
