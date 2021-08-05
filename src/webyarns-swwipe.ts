@@ -339,7 +339,7 @@ class SWWipe {
             ctx.drawImage(
                 i.img,
                 this.width / 2 - w / 2,
-                this.height /2 - h / 2,
+                this.height / 2 - h / 2,
                 w, h)
         } else if (this.aspect > i.aspect) {
 
@@ -405,31 +405,78 @@ class SWWipe {
     }
 }
 
-const contain = fit(true)
-const cover = fit(false)
+class SWWipeStatic {
+    private readonly img: HTMLImageElement;
+    private heightScale: number;
+    private widthScale: number;
 
-function fit(contains: boolean) {
-    return (parentWidth: number, parentHeight: number, childWidth: number, childHeight: number, scale = 1, offsetX = 0.5, offsetY = 0.5) => {
-        const childRatio = childWidth / childHeight
-        const parentRatio = parentWidth / parentHeight
-        let width = parentWidth * scale
-        let height = parentHeight * scale
+    width: number = window.innerWidth;				// width of container (banner)
+    height: number = window.innerHeight;				// height of container
 
-        if (contains ? (childRatio > parentRatio) : (childRatio < parentRatio)) {
-            height = width / childRatio
-        } else {
-            width = height * childRatio
+
+    private readonly _canvas: HTMLCanvasElement = document.createElement('canvas');
+    private readonly _context: CanvasRenderingContext2D;
+
+    constructor(readonly banner: HTMLElement, readonly owner: HTMLElement) {
+        const images = Array.from(this.banner.querySelectorAll("img"));
+        if (images.length !== 1) {
+            throw Error("Was expecting a single img for static-banner")
         }
+        this.img = images[0]
+        this.heightScale = images[0].hasAttribute("data-proportional-height") ? Number(this.img.getAttribute("data-proportional-height")) : 1;
+        this.widthScale = images[0].hasAttribute("data-proportional-width") ? Number(this.img.getAttribute("data-proportional-width")) : 1;
 
-        return {
-            width,
-            height,
-            offsetX: (parentWidth - width) * offsetX,
-            offsetY: (parentHeight - height) * offsetY
-        }
+        this.banner.appendChild(this._canvas);
+        const context = this._canvas.getContext("2d")
+        if (context === null) throw Error("2d context not supported")
+        this._context = context;
+        this._context.globalCompositeOperation = "source-over";
+        this.img.addEventListener("load",()=> this.draw())
+        this.draw();
+        // window.addEventListener('resize', this.resize);
     }
-}
 
+    start() {
+        this.resize();
+    }
+    draw() {
+
+
+        const canvasWidthMiddle = this._context.canvas.width / 2;
+        const canvasHeightMiddle = this._context.canvas.height / 2;
+        const g = this._context.createRadialGradient(canvasWidthMiddle, canvasHeightMiddle, 0, canvasWidthMiddle, canvasHeightMiddle, Math.max(canvasWidthMiddle, canvasHeightMiddle))
+        g.addColorStop(0, "#5cb8f8")
+        g.addColorStop(1, "#464848")
+        this._context.save();
+        this._context.fillStyle = g;
+        this._context.fillRect(0, 0, this._context.canvas.width, this._context.canvas.height)
+        const h = this.height * this.heightScale
+        const w = this.width * this.widthScale
+        this._context.restore();
+        this._context.drawImage(
+            this.img,
+            this.width / 2 - w / 2,
+            this.height / 2 - h / 2,
+            w, h)
+
+
+    }
+
+    private resize() {
+
+        this.width = window.innerWidth;
+        this.height = document.documentElement.clientHeight; // DS: fix for iOS 9 bug
+
+        this._context.canvas.width = this.width;
+        this._context.canvas.height = this.height;
+
+
+        this.draw();
+    };
+
+
+
+}
 
 (function () {
 
@@ -476,6 +523,14 @@ function fit(contains: boolean) {
                     sswipe.next();
 
             }
+        })
+
+        document.querySelectorAll<HTMLElement>(".static-banner").forEach(b => {
+            const owner = b.closest("section")
+            if (!owner) throw Error("banner element not part of a section")
+            const staticWipe = new SWWipeStatic(b, owner)
+            staticWipe.start()
+
         })
     })
 

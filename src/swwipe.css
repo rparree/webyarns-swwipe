@@ -31,6 +31,9 @@ html, body {
 	left:100%;
 }
 
+.static-banner img {
+	display: none;
+}
 .bannerImages img {
 
 	/*	display:none;*/
