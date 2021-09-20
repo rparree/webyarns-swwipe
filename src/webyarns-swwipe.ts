@@ -41,6 +41,8 @@ class SWWipe {
     private readonly _backContext: CanvasRenderingContext2D;
     private readonly _foregroundContext: CanvasRenderingContext2D;
 
+    private _ready: boolean = false;
+    private noOfLoadedImage = 0;
     private percent: number = 0;
     private startTime: Date = new Date;
     private nextFadeTimer: NodeJS.Timeout | null = null;
@@ -52,6 +54,17 @@ class SWWipe {
 
     private get nxtImg(): ImageObject {
         return this.imageArray[(this.currentIdx + 1) % this.imageArray.length];
+    }
+
+    private readImage = (img: HTMLImageElement) => {
+        if (img.complete) {
+            this.noOfLoadedImage  = this.noOfLoadedImage + 1
+        } else {
+            img.addEventListener("load",()=>{
+                this.noOfLoadedImage = this.noOfLoadedImage + 1
+            })
+        }
+        this._ready = this.noOfLoadedImage === this.imageArray.length
     }
 
     constructor(readonly banner: HTMLElement, readonly owner: HTMLElement, readonly mode: Mode = Mode.AUTO, readonly loop = true) {
@@ -76,6 +89,8 @@ class SWWipe {
             }
         })
 
+        this.imageArray.forEach(i=>  this.readImage(i.img))
+
         this.banner.appendChild(this._backCanvas);
         this.banner.appendChild(this._foreCanvas);
         const backContext = this._backCanvas.getContext("2d")
@@ -90,7 +105,6 @@ class SWWipe {
     private nextFade = () => {
         // advance indices
         this.currentIdx = ++this.currentIdx % this.imageArray.length;
-        this.drawImage();
 
         // clear the foreground
         this._foregroundContext.clearRect(0, 0, this.width, this.height);
@@ -344,9 +358,14 @@ class SWWipe {
 
 
     start() {
-        this.currentIdx = -1
-        this.nextFade();
-        this.resize();
+        if (this._ready){
+            this.currentIdx = -1
+            this.nextFade();
+            this.resize();
+        } else {
+
+            setTimeout(this.start,100)
+        }
     }
 
     stop() {
