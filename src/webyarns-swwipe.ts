@@ -13,6 +13,7 @@ Webyarns version:
 - on destroy remove created elements
 */
 
+
 enum Mode {
     AUTO, MULTI_SECTION
 }
@@ -42,6 +43,7 @@ class SWWipe {
     private readonly _foregroundContext: CanvasRenderingContext2D;
 
     private _ready: boolean = false;
+    private _startDelay: NodeJS.Timeout | null = null
     private noOfLoadedImage = 0;
     private percent: number = 0;
     private startTime: Date = new Date;
@@ -58,13 +60,14 @@ class SWWipe {
 
     private readImage = (img: HTMLImageElement) => {
         if (img.complete) {
-            this.noOfLoadedImage  = this.noOfLoadedImage + 1
+            this.noOfLoadedImage = this.noOfLoadedImage + 1
+            this._ready = this.noOfLoadedImage === this.imageArray.length
         } else {
-            img.addEventListener("load",()=>{
+            img.addEventListener("load", () => {
                 this.noOfLoadedImage = this.noOfLoadedImage + 1
+                this._ready = this.noOfLoadedImage === this.imageArray.length
             })
         }
-        this._ready = this.noOfLoadedImage === this.imageArray.length
     }
 
     constructor(readonly banner: HTMLElement, readonly owner: HTMLElement, readonly mode: Mode = Mode.AUTO, readonly loop = true) {
@@ -89,7 +92,7 @@ class SWWipe {
             }
         })
 
-        this.imageArray.forEach(i=>  this.readImage(i.img))
+        this.imageArray.forEach(i => this.readImage(i.img))
 
         this.banner.appendChild(this._backCanvas);
         this.banner.appendChild(this._foreCanvas);
@@ -306,14 +309,14 @@ class SWWipe {
                 this.nextFadeTimer = setTimeout(this.nextFade, this.curImg.fadeDelay);
     }
 
-    private _draw(i: ImageObject, ctx: CanvasRenderingContext2D){
+    private _draw(i: ImageObject, ctx: CanvasRenderingContext2D) {
         if (i.noResize) {
             const h = i.img.height
             const w = i.img.width
             ctx.drawImage(
                 i.img,
                 this.width / 2 - w / 2,
-                this.height /2 - h / 2,
+                this.height / 2 - h / 2,
                 w, h)
         } else if (this.aspect > i.aspect) {
 
@@ -358,18 +361,18 @@ class SWWipe {
 
 
     start() {
-        if (this._ready){
+        if (this._ready) {
             this.currentIdx = -1
             this.nextFade();
             this.resize();
         } else {
-
-            setTimeout(this.start,100)
+            this._startDelay = setTimeout(this.start, 100)
         }
     }
 
     stop() {
         this.nextFadeTimer && clearTimeout(this.nextFadeTimer)
+        this._startDelay && clearTimeout(this._startDelay)
     }
 
     next() {
