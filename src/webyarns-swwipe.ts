@@ -108,7 +108,7 @@ class SWWipe {
     private nextFade = () => {
         // advance indices
         this.currentIdx = ++this.currentIdx % this.imageArray.length;
-
+        this.drawImage();
         // clear the foreground
         this._foregroundContext.clearRect(0, 0, this.width, this.height);
 
@@ -319,14 +319,12 @@ class SWWipe {
                 this.height / 2 - h / 2,
                 w, h)
         } else if (this.aspect > i.aspect) {
-
             ctx.drawImage(i.img,
                 0,
                 (this.height - this.width / i.aspect) / 2,
                 this.width,
                 this.width / i.aspect);
         } else {
-
             ctx.drawImage(i.img,
                 (this.width - this.height * i.aspect) / 2,
                 0,
