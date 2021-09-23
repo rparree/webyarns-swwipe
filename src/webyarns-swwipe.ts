@@ -310,6 +310,7 @@ class SWWipe {
     }
 
     private _draw(i: ImageObject, ctx: CanvasRenderingContext2D) {
+        console.log("_draw", i.img.src.substr(i.img.src.lastIndexOf("/") ),this.height)
         if (i.noResize) {
             const h = i.img.height
             const w = i.img.width
@@ -389,7 +390,7 @@ class SWWipe {
 
 (function () {
 
-    document.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("load", () => {
         document.querySelectorAll<HTMLElement>(".banner").forEach(b => {
             const mode: Mode = b.hasAttribute("data-multi-swipe") ? Mode.MULTI_SECTION : Mode.AUTO
             const noLoop: boolean = b.hasAttribute("data-no-loop")
