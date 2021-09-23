@@ -102,7 +102,7 @@ class SWWipe {
         this._backContext = backContext;
         this._foregroundContext = foreContext;
 
-        window.addEventListener('resize', this.resize);
+
     }
 
     private nextFade = () => {
@@ -363,12 +363,14 @@ class SWWipe {
             this.currentIdx = -1
             this.nextFade();
             this.resize();
+            window.addEventListener('resize', this.resize);
         } else {
             this._startDelay = setTimeout(this.start, 100)
         }
     }
 
     stop() {
+        window.removeEventListener('resize', this.resize);
         this.nextFadeTimer && clearTimeout(this.nextFadeTimer)
         this._startDelay && clearTimeout(this._startDelay)
     }
