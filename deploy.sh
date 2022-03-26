@@ -10,4 +10,9 @@ mkdir -p /home/rparree/documents/nextcloud-private/shares/alan/webyarns-swwipe
 rsync  -auHzP \
    dist/ \
    --delete \
+   --exclude "css/" \
+   --exclude "images/" \
+   --exclude "js/" \
+   --exclude "lib/" \
+   --exclude "index.html" \
    /home/rparree/documents/nextcloud-private/shares/alan/webyarns-swwipe/$(git branch --show-current)
