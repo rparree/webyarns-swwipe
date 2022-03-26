@@ -39,7 +39,7 @@ module.exports = (env, argv) => {
         mode: "development",
         entry: {
             'webyarns-swwipe': {
-                import: "./src/webyarns-swwipe.ts",
+                import: "./src/index.ts",
                 filename: `webyarns-swwipe-${version}.js`,
             },
         },
