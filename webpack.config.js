@@ -5,7 +5,9 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
 const {GitRevisionPlugin} = require('git-revision-webpack-plugin')
-const gitRevisionPlugin = new GitRevisionPlugin()
+const gitRevisionPlugin = new GitRevisionPlugin({
+    versionCommand: 'describe --always --tags --abbrev=0',
+})
 
 function genHtmlWebpackPlugin(template) {
     return new HtmlWebpackPlugin({
@@ -17,7 +19,7 @@ function genHtmlWebpackPlugin(template) {
 }
 
 module.exports = (env, argv) => {
-    const version = process.env.npm_package_version
+    const version = gitRevisionPlugin.version()
     commitHash = JSON.stringify(gitRevisionPlugin.commithash())
     const isDevMode = argv.mode === 'development';
     console.log("development mode: ", isDevMode)

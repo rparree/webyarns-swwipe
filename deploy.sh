@@ -6,7 +6,7 @@ rsync  -auHzP \
    --delete \
    eabigelowjr@webyarns.com:www/rptest/webyarns-swwipe/$(git branch --show-current)
 
-
+mkdir -p /home/rparree/documents/nextcloud-private/shares/alan/webyarns-swwipe
 rsync  -auHzP \
    dist/ \
    --delete \
